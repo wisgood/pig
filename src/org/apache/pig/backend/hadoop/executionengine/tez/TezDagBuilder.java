@@ -1053,7 +1053,8 @@ public class TezDagBuilder extends TezOpPlanVisitor {
         JSONObject jsonObject = new JSONObject();
         try {
             if (description != null && !description.isEmpty()) {
-                jsonObject.put("desc", description);
+               // jsonObject.put("desc", description);
+                jsonObject.put("desc", "desc is set to empty");
         }
         if (conf != null) {
             JSONObject confJson = new JSONObject();
@@ -1062,7 +1063,8 @@ public class TezDagBuilder extends TezOpPlanVisitor {
                 Entry<String, String> entry = iter.next();
                 confJson.put(entry.getKey(), entry.getValue());
             }
-            jsonObject.put("config", confJson);
+      //      jsonObject.put("config", confJson);
+            jsonObject.put("config", "config is set to empty");
         }
         } catch (JSONException e) {
             throw new IOException("Error when trying to convert description/conf to JSON", e);
