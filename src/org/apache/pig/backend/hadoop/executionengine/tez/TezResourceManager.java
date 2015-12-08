@@ -18,32 +18,25 @@
 package org.apache.pig.backend.hadoop.executionengine.tez;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.hadoop.yarn.api.records.LocalResourceVisibility;
 import org.apache.hadoop.yarn.util.ConverterUtils;
-import org.apache.pig.PigConfiguration;
 import org.apache.pig.impl.PigContext;
 import org.apache.pig.impl.io.FileLocalizer;
+import static org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler.getFromCache;
+import static org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler.getCacheStagingDir;
 
 public class TezResourceManager {
     private static TezResourceManager instance = null;
@@ -53,7 +46,6 @@ public class TezResourceManager {
     private Configuration conf;
     private PigContext pigContext;
     public Map<String, Path> resources = new HashMap<String, Path>();
-    private static final Log log = LogFactory.getLog(TezResourceManager.class);
 
     static public TezResourceManager getInstance() {
         if (instance==null) {
@@ -101,12 +93,11 @@ public class TezResourceManager {
 
                 }
 
-                    Path remoteFsPath = remoteFs.makeQualified(new Path(stagingDir, resourceName));
-                    remoteFs.copyFromLocalFile(resourcePath, remoteFsPath);
-                    remoteFs.setReplication(remoteFsPath, (short) conf.getInt(Job.SUBMIT_REPLICATION, 3));
-                    resources.put(resourceName, remoteFsPath);
-                    return remoteFsPath;
-
+                Path remoteFsPath = remoteFs.makeQualified(new Path(stagingDir, resourceName));
+                remoteFs.copyFromLocalFile(resourcePath, remoteFsPath);
+                remoteFs.setReplication(remoteFsPath, (short)conf.getInt(Job.SUBMIT_REPLICATION, 3));
+                resources.put(resourceName, remoteFsPath);
+                return remoteFsPath;
             }
             resources.put(resourceName, resourcePath);
             return resourcePath;
@@ -150,61 +141,6 @@ public class TezResourceManager {
             tezResources.put(resourceName, tezResource);
         }
         return tezResources;
-    }
-    private static Path getFromCache(PigContext pigContext,
-                                     Configuration conf,
-                                     URL url) throws IOException {
-        InputStream is1 = null;
-        InputStream is2 = null;
-        OutputStream os = null;
-
-        try {
-            Path stagingDir = getCacheStagingDir(conf);
-            String filename = FilenameUtils.getName(url.getPath());
-
-            is1 = url.openStream();
-            String checksum = DigestUtils.shaHex(is1);
-            FileSystem fs = FileSystem.get(conf);
-            Path cacheDir = new Path(stagingDir, checksum);
-            Path cacheFile = new Path(cacheDir, filename);
-            if (fs.exists(cacheFile)) {
-                log.debug("Found " + url + " in jar cache at "+ cacheDir);
-                long curTime = System.currentTimeMillis();
-                fs.setTimes(cacheFile, -1, curTime);
-                return cacheFile;
-            }
-            log.info("Url "+ url + " was not found in jarcache at "+ cacheDir);
-            // attempt to copy to cache else return null
-            fs.mkdirs(cacheDir, FileLocalizer.OWNER_ONLY_PERMS);
-            is2 = url.openStream();
-            os = FileSystem.create(fs, cacheFile, FileLocalizer.OWNER_ONLY_PERMS);
-            IOUtils.copyBytes(is2, os, 4096, true);
-
-            return cacheFile;
-
-        } catch (IOException ioe) {
-            log.info("Unable to retrieve jar from jar cache ", ioe);
-            return null;
-        } finally {
-            org.apache.commons.io.IOUtils.closeQuietly(is1);
-            org.apache.commons.io.IOUtils.closeQuietly(is2);
-            // IOUtils should not close stream to HDFS quietly
-            if (os != null) {
-                os.close();
-            }
-        }
-    }
-
-
-    private static Path getCacheStagingDir(Configuration conf) throws IOException {
-        String pigTempDir = conf.get(PigConfiguration.PIG_USER_CACHE_LOCATION,
-                conf.get(PigConfiguration.PIG_TEMP_DIR, "/tmp"));
-        String currentUser = System.getProperty("user.name");
-        Path stagingDir = new Path(pigTempDir + "/" + currentUser + "/", ".pigcache");
-        FileSystem fs = FileSystem.get(conf);
-        fs.mkdirs(stagingDir);
-        fs.setPermission(stagingDir, FileLocalizer.OWNER_ONLY_PERMS);
-        return stagingDir;
     }
 }
 

@@ -1696,7 +1696,7 @@ public class JobControlCompiler{
         return null;
     }
 
-    private static Path getCacheStagingDir(Configuration conf) throws IOException {
+    public static Path getCacheStagingDir(Configuration conf) throws IOException {
         String pigTempDir = conf.get(PigConfiguration.PIG_USER_CACHE_LOCATION,
                 conf.get(PigConfiguration.PIG_TEMP_DIR, "/tmp"));
         String currentUser = System.getProperty("user.name");
@@ -1707,7 +1707,7 @@ public class JobControlCompiler{
         return stagingDir;
     }
 
-    private static Path getFromCache(PigContext pigContext,
+    public static Path getFromCache(PigContext pigContext,
             Configuration conf,
             URL url) throws IOException {
         InputStream is1 = null;
