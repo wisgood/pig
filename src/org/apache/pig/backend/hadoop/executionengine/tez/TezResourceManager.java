@@ -34,6 +34,7 @@ import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.hadoop.yarn.api.records.LocalResourceVisibility;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.pig.impl.PigContext;
+import org.apache.pig.PigConfiguration;
 import org.apache.pig.impl.io.FileLocalizer;
 import static org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler.getFromCache;
 import static org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler.getCacheStagingDir;

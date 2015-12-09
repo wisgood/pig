@@ -869,7 +869,7 @@ public class PigServer {
      * @param name of job
      */
     public void setJobName(String name) {
-        jobName = PigContext.JOB_NAME_PREFIX + ":" + name;
+        jobName =  name;
     }
 
     /**
